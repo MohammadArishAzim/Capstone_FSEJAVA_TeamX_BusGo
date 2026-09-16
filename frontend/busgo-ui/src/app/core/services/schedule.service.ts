@@ -18,6 +18,10 @@ export class ScheduleService {
     return this.http.get<SeatMap>(`${this.base}/${scheduleId}/seats`);
   }
 
+  getCities(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.base}/cities`);
+  }
+
   findAll(): Observable<Schedule[]> {
     return this.http.get<Schedule[]>(`${this.base}/all`);
   }

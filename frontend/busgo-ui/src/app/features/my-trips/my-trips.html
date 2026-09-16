@@ -35,7 +35,10 @@
                   {{ b.status }}
                 </span>
               </td>
-              <td>
+              <td class="row-actions">
+                <a class="btn btn-secondary btn-sm" [routerLink]="['/my-trips', b.id, 'ticket']">
+                  Print Ticket
+                </a>
                 @if (b.status === 'BOOKED') {
                   <button
                     class="btn btn-danger btn-sm"

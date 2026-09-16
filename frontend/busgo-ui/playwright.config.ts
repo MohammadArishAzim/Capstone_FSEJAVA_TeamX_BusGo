@@ -22,6 +22,9 @@ export default defineConfig({
   timeout: 30_000,
   expect: { timeout: 5_000 },
   fullyParallel: false, // tests share seeded schedules/seats; run serially to avoid seat conflicts
+  workers: 1, // fullyParallel:false only serializes within a file; multiple spec files still get
+  // separate workers by default, which races against the same shared DB/seats -- force one worker
+  // total so every test across every file runs strictly one at a time.
   retries: 0,
   reporter: [['list']],
   use: {

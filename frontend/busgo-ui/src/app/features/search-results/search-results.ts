@@ -1,8 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ScheduleService } from '../../core/services/schedule.service';
 import { BookingDraftService } from '../../core/services/booking-draft.service';
 import { ScheduleSearchResult } from '../../core/models/schedule.model';
+
+type SortKey = 'departure' | 'fare';
 
 @Component({
   selector: 'app-search-results',
@@ -22,6 +24,21 @@ export class SearchResultsComponent implements OnInit {
   from = '';
   to = '';
   date = '';
+
+  /** Sort control (stretch goal, spec section 22). Departure time is the default order the
+   *  backend already returns, so sorting by it is a no-op re-sort rather than a real change. */
+  readonly sortBy = signal<SortKey>('departure');
+
+  readonly sortedResults = computed(() => {
+    const key = this.sortBy();
+    return [...this.results()].sort((a, b) =>
+      key === 'fare' ? a.fare - b.fare : a.departureTime.localeCompare(b.departureTime)
+    );
+  });
+
+  setSortBy(key: SortKey): void {
+    this.sortBy.set(key);
+  }
 
   ngOnInit(): void {
     this.route.queryParamMap.subscribe((params) => {

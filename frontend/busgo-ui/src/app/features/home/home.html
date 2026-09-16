@@ -5,7 +5,7 @@
   <form class="card search-form" [formGroup]="form" (ngSubmit)="search()">
     <div class="form-field">
       <label for="from">From</label>
-      <input id="from" type="text" formControlName="from" placeholder="e.g. Hyderabad" />
+      <input id="from" type="text" formControlName="from" placeholder="e.g. Hyderabad" list="city-options" autocomplete="off" />
       @if (form.controls.from.invalid && form.controls.from.touched) {
         <span class="field-error">From city is required</span>
       }
@@ -17,11 +17,17 @@
 
     <div class="form-field">
       <label for="to">To</label>
-      <input id="to" type="text" formControlName="to" placeholder="e.g. Bangalore" />
+      <input id="to" type="text" formControlName="to" placeholder="e.g. Bangalore" list="city-options" autocomplete="off" />
       @if (form.controls.to.invalid && form.controls.to.touched) {
         <span class="field-error">To city is required</span>
       }
     </div>
+
+    <datalist id="city-options">
+      @for (city of cities(); track city) {
+        <option [value]="city"></option>
+      }
+    </datalist>
 
     <div class="form-field">
       <label for="date">Date of journey</label>

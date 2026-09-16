@@ -31,6 +31,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/my-trips/my-trips').then((m) => m.MyTripsComponent),
   },
   {
+    path: 'my-trips/:id/ticket',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/ticket/ticket').then((m) => m.TicketComponent),
+  },
+  {
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () =>
