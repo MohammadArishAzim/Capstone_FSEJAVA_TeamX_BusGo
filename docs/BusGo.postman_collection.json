@@ -1,0 +1,258 @@
+{
+  "info": {
+    "name": "BusGo API",
+    "description": "Bus ticket booking API - Sprint 1 scaffold. Run the 'Login (Admin)' or 'Login (Passenger)' request first to populate {{token}} via the collection's test script, then the other requests will send it automatically as a Bearer token.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080/api" },
+    { "key": "token", "value": "" },
+    { "key": "scheduleId", "value": "1" },
+    { "key": "bookingId", "value": "1" },
+    { "key": "busId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"passenger@example.com\",\n  \"password\": \"password123\",\n  \"name\": \"Test Passenger\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Passenger)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"passenger@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.token) { pm.collectionVariables.set('token', body.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@busgo.com\",\n  \"password\": \"Admin@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Schedules",
+      "item": [
+        {
+          "name": "Search Schedules",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/schedules?from=Hyderabad&to=Bangalore&date=2026-09-19",
+              "host": ["{{baseUrl}}"],
+              "path": ["schedules"],
+              "query": [
+                { "key": "from", "value": "Hyderabad" },
+                { "key": "to", "value": "Bangalore" },
+                { "key": "date", "value": "2026-09-19" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Seat Map",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/schedules/{{scheduleId}}/seats"
+          }
+        },
+        {
+          "name": "List All Schedules (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/schedules/all"
+          }
+        },
+        {
+          "name": "Create Schedule (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/schedules",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"busId\": {{busId}},\n  \"fromCity\": \"Hyderabad\",\n  \"toCity\": \"Bangalore\",\n  \"departureTime\": \"20:00:00\",\n  \"arrivalTime\": \"05:30:00\",\n  \"fare\": 999.00,\n  \"journeyDate\": \"2026-09-19\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Schedule (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/schedules/{{scheduleId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"busId\": {{busId}},\n  \"fromCity\": \"Hyderabad\",\n  \"toCity\": \"Bangalore\",\n  \"departureTime\": \"20:30:00\",\n  \"arrivalTime\": \"06:00:00\",\n  \"fare\": 1050.00,\n  \"journeyDate\": \"2026-09-19\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Schedule (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/schedules/{{scheduleId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Buses",
+      "item": [
+        {
+          "name": "List Buses",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/buses"
+          }
+        },
+        {
+          "name": "Create Bus (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/buses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"busNumber\": \"KA-09-ZZ-4321\",\n  \"operatorName\": \"National Travels\",\n  \"totalSeats\": 40,\n  \"busType\": \"SEATER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Bus (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/buses/{{busId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"busNumber\": \"KA-09-ZZ-4321\",\n  \"operatorName\": \"National Travels\",\n  \"totalSeats\": 40,\n  \"busType\": \"SLEEPER\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Bus (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/buses/{{busId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.id) { pm.collectionVariables.set('bookingId', body.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/bookings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduleId\": {{scheduleId}},\n  \"seatNumbers\": [\"1A\", \"1B\"]\n}"
+            }
+          }
+        },
+        {
+          "name": "My Bookings",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/bookings/mine"
+          }
+        },
+        {
+          "name": "Cancel Booking",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/bookings/{{bookingId}}/cancel"
+          }
+        }
+      ]
+    }
+  ]
+}

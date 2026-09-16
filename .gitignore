@@ -1,0 +1,31 @@
+# ---------- Maven / Java (backend) ----------
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!**/lib/*.jar
+hs_err_pid*
+
+# H2 file-based DB artifacts, if ever switched from in-memory
+backend/*.mv.db
+backend/*.trace.db
+
+# ---------- Node / Angular (frontend) ----------
+frontend/busgo-ui/node_modules/
+frontend/busgo-ui/dist/
+frontend/busgo-ui/.angular/
+frontend/busgo-ui/coverage/
+frontend/busgo-ui/npm-debug.log*
+frontend/busgo-ui/*.tsbuildinfo
+
+# ---------- IDE ----------
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.iml
+.DS_Store
+Thumbs.db
+
+# ---------- Env / secrets ----------
+.env
+*.env.local

@@ -1,0 +1,46 @@
+<section>
+  <h2>{{ from }} &rarr; {{ to }}</h2>
+  <p class="subtitle">{{ date }}</p>
+
+  @if (loading()) {
+    <p>Searching buses...</p>
+  } @else if (searched() && results().length === 0) {
+    <div class="empty-state card">
+      <p>No buses found for this route and date.</p>
+      <p>Try the seeded route: Hyderabad &rarr; Bangalore.</p>
+    </div>
+  } @else {
+    <div class="results">
+      @for (bus of results(); track bus.id) {
+        <div class="card result-card">
+          <div class="result-main">
+            <div class="operator">
+              <strong>{{ bus.operatorName }}</strong>
+              <span class="bus-type">{{ bus.busType }}</span>
+            </div>
+            <div class="timing">
+              <span class="time">{{ bus.departureTime.slice(0, 5) }}</span>
+              <span class="arrow">&rarr;</span>
+              <span class="time">{{ bus.arrivalTime.slice(0, 5) }}</span>
+            </div>
+            <div class="bus-number">{{ bus.busNumber }}</div>
+          </div>
+
+          <div class="result-meta">
+            <div class="seats" [class.low]="bus.seatsAvailable <= 5">
+              {{ bus.seatsAvailable }} seats left
+            </div>
+            <div class="fare">&#8377;{{ bus.fare }}</div>
+            <button
+              class="btn btn-primary"
+              [disabled]="bus.seatsAvailable === 0"
+              (click)="selectSeats(bus)"
+            >
+              Select Seats
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</section>

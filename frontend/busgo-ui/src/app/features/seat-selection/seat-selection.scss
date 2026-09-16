@@ -1,0 +1,121 @@
+.seat-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.trip-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .route {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+  }
+
+  .fare-per-seat {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+}
+
+.legend {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+
+  .dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 0.35rem;
+    vertical-align: middle;
+
+    &.available {
+      background: #fff;
+      border: 1px solid #94a3b8;
+    }
+    &.selected {
+      background: var(--color-primary);
+    }
+    &.booked {
+      background: var(--color-danger);
+    }
+  }
+}
+
+.seat-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 360px;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  .row-label {
+    width: 1.25rem;
+    color: var(--color-text-muted);
+    font-size: 0.75rem;
+  }
+}
+
+.seat {
+  width: 48px;
+  height: 40px;
+  border-radius: 6px;
+  border: 1px solid #94a3b8;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+
+  &:nth-of-type(2) {
+    margin-right: 0.75rem; // aisle gap between seat B and seat C
+  }
+
+  &.selected {
+    background: var(--color-primary);
+    border-color: var(--color-primary-dark);
+    color: #fff;
+  }
+
+  &.booked {
+    background: #fecaca;
+    border-color: var(--color-danger);
+    color: #991b1b;
+    cursor: not-allowed;
+  }
+
+  &:hover:not(.booked):not(.selected) {
+    border-color: var(--color-primary);
+  }
+}
+
+.confirm-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  bottom: 1rem;
+
+  .selected-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+  }
+
+  .total-fare {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+}

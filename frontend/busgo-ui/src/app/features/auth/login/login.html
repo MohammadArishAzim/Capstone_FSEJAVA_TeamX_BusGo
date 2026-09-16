@@ -1,0 +1,31 @@
+<section class="auth-page">
+  <div class="card auth-card">
+    <h2>Log in</h2>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="you@example.com" />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="field-error">Enter a valid email</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="field-error">Password is required</span>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary full-width" [disabled]="submitting()">
+        {{ submitting() ? 'Logging in...' : 'Log in' }}
+      </button>
+    </form>
+
+    <p class="switch-link">Don't have an account? <a routerLink="/register">Register</a></p>
+
+    <p class="hint">Seeded admin: admin&#64;busgo.com / Admin&#64;123</p>
+  </div>
+</section>

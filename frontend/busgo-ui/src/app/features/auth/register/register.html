@@ -1,0 +1,37 @@
+<section class="auth-page">
+  <div class="card auth-card">
+    <h2>Create an account</h2>
+
+    <form [formGroup]="form" (ngSubmit)="submit()">
+      <div class="form-field">
+        <label for="name">Full name</label>
+        <input id="name" type="text" formControlName="name" placeholder="Jane Doe" />
+        @if (form.controls.name.invalid && form.controls.name.touched) {
+          <span class="field-error">Name is required</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="email">Email</label>
+        <input id="email" type="email" formControlName="email" placeholder="you@example.com" />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="field-error">Enter a valid email</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="password">Password</label>
+        <input id="password" type="password" formControlName="password" />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="field-error">Minimum 6 characters</span>
+        }
+      </div>
+
+      <button type="submit" class="btn btn-primary full-width" [disabled]="submitting()">
+        {{ submitting() ? 'Creating account...' : 'Register' }}
+      </button>
+    </form>
+
+    <p class="switch-link">Already have an account? <a routerLink="/login">Log in</a></p>
+  </div>
+</section>

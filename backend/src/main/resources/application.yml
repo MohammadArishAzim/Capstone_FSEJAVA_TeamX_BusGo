@@ -1,0 +1,66 @@
+spring:
+  application:
+    name: busgo-backend
+  profiles:
+    active: dev
+
+busgo:
+  jwt:
+    secret: ${JWT_SECRET:busgo-dev-secret-key-change-in-production-min-32-bytes-long}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000} # 24h
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs
+
+server:
+  port: ${SERVER_PORT:8080}
+
+---
+# ---------- DEV profile: H2 in-memory, auto-create schema, seeded data, Swagger + H2 console on ----------
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:busgo;DB_CLOSE_DELAY=-1;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+logging:
+  level:
+    com.busgo: DEBUG
+
+---
+# ---------- PROD profile: PostgreSQL via env vars, no auto schema changes beyond update (kept simple for this project) ----------
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/busgo}
+    username: ${DB_USERNAME:busgo}
+    password: ${DB_PASSWORD:busgo}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+logging:
+  level:
+    com.busgo: INFO
