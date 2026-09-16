@@ -71,6 +71,11 @@ Create the `busgo` database and role yourself first (`CREATE DATABASE busgo;` et
 still auto-managed via `ddl-auto: update`, kept simple on purpose for this project rather than
 introducing a migration tool like Flyway.
 
+All four env vars above are **required** under the `prod` profile — unlike `dev`, there is no
+fallback default for `JWT_SECRET`, `DB_URL`, `DB_USERNAME`, or `DB_PASSWORD`. If any is unset,
+Spring fails fast at startup with a clear "could not resolve placeholder" error instead of
+silently running with the publicly-committed dev secret or well-known `busgo`/`busgo` credentials.
+
 ### Running the tests
 
 ```bash
@@ -90,16 +95,20 @@ cover:
   `PasswordEncoder`, bad-credentials propagation on login.
 - **BusServiceTest** — duplicate bus-number rejection, not-found, delete.
 
-> **A note on this session's environment**: this sandbox's outbound network access is restricted
-> to an allowlist that does **not** include Maven Central or any mirror, so `mvn` could not
-> actually download dependencies or run `mvn test`/`mvn spring-boot:run` in this build session —
-> every attempt (`repo.maven.apache.org`, `repo1.maven.org`, `repo.spring.io`) returned a 403 at
-> the network policy layer. The backend source was therefore written and reviewed carefully by
-> hand rather than iterated against a real compiler, and should be run once (`mvn test`, then
-> `mvn spring-boot:run`) in an environment with normal internet access before you treat it as
-> verified. The Angular frontend, by contrast, **was** built and tested successfully in this
-> session (npm's registry was reachable) — see the Frontend section for what was actually
-> verified.
+> **Verified**: `mvn clean test` (27/27 passing), `mvn clean package`, and a live run
+> (`java -jar target/backend-0.1.0.jar`) were all executed successfully, including exercising the
+> `/api/auth/login` and `/api/schedules` endpoints against the seeded H2 data with real HTTP
+> requests. Two dependency-version pins were required to build cleanly on a JDK 25 toolchain (the
+> project still targets `java.version=21` and builds fine on 21 too): `lombok.version=1.18.48`
+> (older Lombok can't patch JDK 25's compiler internals) and `mockito.version=5.23.0` plus an
+> explicit `byte-buddy.version=1.18.14` override (Hibernate's transitively-pulled Byte Buddy 1.14.19
+> otherwise wins Maven's nearest-wins mediation and can't instrument classes on JDK 25). An explicit
+> `maven-compiler-plugin` block with `annotationProcessorPaths` was also added so Lombok's
+> annotation processor is reliably invoked regardless of JDK/IDE defaults — without it, the plain
+> `spring-boot-maven-plugin` exclude alone isn't sufficient on every toolchain, and all Lombok
+> codegen (builders, getters/setters, `@Slf4j`) silently no-ops, which fails the build with "cannot
+> find symbol" everywhere it's used. The Angular frontend was built and tested successfully in this
+> session too — see the Frontend section for what was verified there.
 
 ---
 
@@ -238,10 +247,19 @@ There is no separate `Seat` table — a schedule's booked seats are derived by q
 (`BookingSeatRepository.findBookedSeatNumbers`). `BookingService.createBooking` is
 `@Transactional` and re-checks that set against the newly requested seat numbers immediately
 before inserting, so a booking is rejected with `409 CONFLICT` (naming the exact conflicting
-seats) if another booking claimed one of the requested seats first. There's no seat-lock/TTL
+seats) if another booking claimed one of the requested seats first.
+
+This check-then-insert is only safe against concurrent requests because `createBooking` loads the
+schedule via `ScheduleRepository.findByIdForUpdate` (`SELECT ... FOR UPDATE`, a
+`PESSIMISTIC_WRITE` lock), not a plain `findById`. Without that lock, two transactions can both
+run the "is this seat free" read before either has committed its insert (a classic TOCTOU race
+under the default READ_COMMITTED isolation both H2 and Postgres use) and both succeed, silently
+double-booking the seat — this was verified empirically during development by firing 5–8 truly
+concurrent booking requests at the same seat: without the lock, more than one request could win;
+with it, exactly one always does and the rest get a clean `409`. There's still no seat-lock/TTL
 ("seat held for 5 minutes while you check out") — the spec explicitly says this isn't required at
-this level, so two users can both view a seat as available and one will lose the race with a clear
-conflict error, rather than silently double-booking.
+this level, so two users can both view a seat as available and one will lose the race, but that
+race is now genuinely resolved at commit time rather than merely hoped to be.
 
 ### Admin authorization
 
@@ -273,11 +291,8 @@ transparency rather than treated as accidental gaps:
 - **Karma/Jasmine instead of Angular 21's new Vitest default**, for the environment-specific
   reason described in the Frontend section above (an npm bug with Vitest's peer-dep graph in this
   sandbox) — not a preference against Vitest generally.
-- **`mvn test` / `mvn spring-boot:run` were not actually executed in this build session** because
-  Maven Central was unreachable from the sandbox that built this (see the backend section above).
-  This is the most important gap to close before treating the backend as done: run `mvn test`
-  yourself in an environment with normal network access, fix anything that surfaces, and only then
-  consider Sprint 1 fully verified end-to-end.
+- **`mvn test` and `mvn spring-boot:run` have now been executed and verified** (see the backend
+  section above) — the earlier gap noted here is closed.
 - **Console logging only** (via Lombok `@Slf4j` / Spring Boot defaults), no external logging
   infrastructure, per the spec's NFRs.
 - **Fare/seat numbering assumes a fixed 4-seats-per-row (A–D) layout** for every bus regardless of

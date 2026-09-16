@@ -57,7 +57,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_succeeds_whenSeatsAreFree() {
-        when(scheduleRepository.findById(10L)).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(schedule));
         when(bookingSeatRepository.findBookedSeatNumbers(10L)).thenReturn(List.of("3A"));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(inv -> {
             Booking b = inv.getArgument(0);
@@ -76,7 +76,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_throwsConflict_whenAnyRequestedSeatIsAlreadyBooked() {
-        when(scheduleRepository.findById(10L)).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(schedule));
         when(bookingSeatRepository.findBookedSeatNumbers(10L)).thenReturn(List.of("1A", "2C"));
 
         BookingRequest request = new BookingRequest(10L, List.of("1A", "1B"));
@@ -90,7 +90,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_throwsConflict_whenDuplicateSeatNumbersRequested() {
-        when(scheduleRepository.findById(10L)).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(schedule));
 
         BookingRequest request = new BookingRequest(10L, List.of("1A", "1A"));
 
@@ -102,7 +102,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_throwsConflict_whenSeatNumberOutOfRangeForBus() {
-        when(scheduleRepository.findById(10L)).thenReturn(Optional.of(schedule));
+        when(scheduleRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(schedule));
 
         // Bus has 40 seats = 10 rows x 4 (A-D); row 11 doesn't exist.
         BookingRequest request = new BookingRequest(10L, List.of("11A"));
@@ -114,7 +114,7 @@ class BookingServiceTest {
 
     @Test
     void createBooking_throwsNotFound_whenScheduleDoesNotExist() {
-        when(scheduleRepository.findById(999L)).thenReturn(Optional.empty());
+        when(scheduleRepository.findByIdForUpdate(999L)).thenReturn(Optional.empty());
 
         BookingRequest request = new BookingRequest(999L, List.of("1A"));
 

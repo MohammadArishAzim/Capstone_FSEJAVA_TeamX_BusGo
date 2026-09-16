@@ -33,15 +33,17 @@ public class BookingService {
 
     /**
      * Creates a booking after checking that none of the requested seats are already held by a
-     * non-cancelled booking on the same schedule. Runs inside a single transaction so the
-     * "check then insert" sequence is atomic from the caller's point of view under the
-     * default isolation level of the configured datasource; the booking_seats table combined
-     * with the BOOKED-only lookup query is what prevents a second booking from reusing a seat
-     * once this transaction commits.
+     * non-cancelled booking on the same schedule. Loads the schedule with a pessimistic write
+     * lock (findByIdForUpdate) so that two concurrent requests for the same schedule serialize:
+     * the second request blocks until the first transaction commits or rolls back, at which
+     * point its own "is this seat free" check sees accurate data. Without this lock, the
+     * check-then-insert sequence is a classic TOCTOU race under READ_COMMITTED -- two
+     * transactions could both read "seat free" before either had inserted, and both commit,
+     * silently double-booking the seat.
      */
     @Transactional
     public BookingResponse createBooking(User user, BookingRequest request) {
-        Schedule schedule = scheduleRepository.findById(request.scheduleId())
+        Schedule schedule = scheduleRepository.findByIdForUpdate(request.scheduleId())
                 .orElseThrow(() -> new NotFoundException("Schedule not found: " + request.scheduleId()));
 
         // De-duplicate requested seat numbers defensively.

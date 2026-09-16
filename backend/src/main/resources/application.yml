@@ -47,14 +47,21 @@ logging:
 
 ---
 # ---------- PROD profile: PostgreSQL via env vars, no auto schema changes beyond update (kept simple for this project) ----------
+# No fallback defaults for secret/credentials here (unlike the dev profile above): if
+# JWT_SECRET, DB_URL, DB_USERNAME or DB_PASSWORD aren't set, Spring fails fast at startup
+# with a clear "could not resolve placeholder" error instead of silently running with the
+# publicly-committed dev secret or well-known busgo/busgo credentials.
+busgo:
+  jwt:
+    secret: ${JWT_SECRET}
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/busgo}
-    username: ${DB_USERNAME:busgo}
-    password: ${DB_PASSWORD:busgo}
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
