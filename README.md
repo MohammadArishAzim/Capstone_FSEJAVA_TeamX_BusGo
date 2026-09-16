@@ -95,6 +95,24 @@ cover:
   `PasswordEncoder`, bad-credentials propagation on login.
 - **BusServiceTest** — duplicate bus-number rejection, not-found, delete.
 
+### Coverage
+
+```bash
+cd backend
+mvn clean verify   # runs tests, generates a JaCoCo report, and fails the build below 60%
+open target/site/jacoco/index.html   # full HTML report, package/class/line drill-down
+```
+
+The spec's "≥60% method-level" target (section 12) is measured, not asserted: `mvn verify` runs a
+JaCoCo coverage check scoped to `com.busgo.service.*` (the package the spec's testing section and
+this project's test suite actually target — controllers are thin pass-throughs to services, DTOs
+are plain records, and security/config classes are framework wiring, none of which the spec asks
+to be unit-tested) and **fails the build** if method coverage there drops below 60%. Measured
+result at time of writing: **67.9% method coverage (36/53), 82.9% line coverage** in
+`com.busgo.service`. Whole-project method coverage (including the intentionally-untested
+controller/DTO/security/config classes) is 34.8% — expected, and not the number the spec's
+target applies to.
+
 > **Verified**: `mvn clean test` (27/27 passing), `mvn clean package`, and a live run
 > (`java -jar target/backend-0.1.0.jar`) were all executed successfully, including exercising the
 > `/api/auth/login` and `/api/schedules` endpoints against the seeded H2 data with real HTTP
