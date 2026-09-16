@@ -1,0 +1,84 @@
+.ticket-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ticket {
+  padding: 2rem;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+
+  h2 {
+    margin: 0;
+  }
+}
+
+.route-line {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+
+  .arrow {
+    color: var(--color-text-muted);
+  }
+}
+
+.ticket-details {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 2rem;
+  margin: 0 0 1.5rem;
+
+  .detail {
+    dt {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: var(--color-text-muted);
+      margin-bottom: 0.2rem;
+    }
+
+    dd {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+}
+
+.ticket-footer {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  border-top: 1px dashed var(--color-border, #d1d5db);
+  padding-top: 1rem;
+  margin: 0;
+}
+
+/* Print layout: show only the ticket card, full width, no app chrome. Global
+   rules for hiding app-navbar/app-toast live in styles.scss since those are
+   siblings of this component, outside its view encapsulation. */
+@media print {
+  .ticket-page {
+    max-width: none;
+  }
+
+  .ticket {
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+}

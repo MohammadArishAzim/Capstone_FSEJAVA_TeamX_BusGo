@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("GET", "/api/schedules", "/api/schedules/*/seats").permitAll()
+                .requestMatchers("GET", "/api/schedules", "/api/schedules/*/seats", "/api/schedules/cities").permitAll()
                 .requestMatchers("GET", "/api/buses", "/api/buses/*").permitAll()
                 .requestMatchers("/api/buses/**").hasRole("ADMIN")
                 .requestMatchers("/api/schedules/**").hasRole("ADMIN")

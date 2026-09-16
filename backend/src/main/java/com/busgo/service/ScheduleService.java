@@ -45,6 +45,11 @@ public class ScheduleService {
         return scheduleRepository.findAll().stream().map(this::toResponse).toList();
     }
 
+    /** Distinct city names for the search form's autocomplete (stretch goal, spec section 22). */
+    public List<String> findDistinctCities() {
+        return scheduleRepository.findDistinctCities();
+    }
+
     @Transactional
     public ScheduleResponse create(ScheduleRequest request) {
         validateTimes(request);

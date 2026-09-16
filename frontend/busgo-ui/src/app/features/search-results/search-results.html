@@ -10,8 +10,28 @@
       <p>Try the seeded route: Hyderabad &rarr; Bangalore.</p>
     </div>
   } @else {
+    <div class="sort-controls" role="group" aria-label="Sort results">
+      <span class="sort-label">Sort by:</span>
+      <button
+        type="button"
+        class="btn btn-sort"
+        [class.active]="sortBy() === 'departure'"
+        (click)="setSortBy('departure')"
+      >
+        Departure time
+      </button>
+      <button
+        type="button"
+        class="btn btn-sort"
+        [class.active]="sortBy() === 'fare'"
+        (click)="setSortBy('fare')"
+      >
+        Fare
+      </button>
+    </div>
+
     <div class="results">
-      @for (bus of results(); track bus.id) {
+      @for (bus of sortedResults(); track bus.id) {
         <div class="card result-card">
           <div class="result-main">
             <div class="operator">

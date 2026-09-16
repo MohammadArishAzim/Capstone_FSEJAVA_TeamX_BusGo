@@ -1,0 +1,77 @@
+<section class="ticket-page">
+  @if (loading()) {
+    <p>Loading ticket...</p>
+  } @else if (notFound()) {
+    <div class="empty-state card">
+      <p>Booking not found.</p>
+      <a class="btn btn-primary" routerLink="/my-trips">Back to My Trips</a>
+    </div>
+  } @else if (booking(); as b) {
+    <div class="no-print actions">
+      <a class="btn btn-secondary" routerLink="/my-trips">&larr; Back to My Trips</a>
+      <button class="btn btn-primary" (click)="print()">Print ticket</button>
+    </div>
+
+    <div class="card ticket">
+      <div class="ticket-header">
+        <h2>BusGo e-Ticket</h2>
+        <span class="badge" [class.badge-booked]="b.status === 'BOOKED'" [class.badge-cancelled]="b.status === 'CANCELLED'">
+          {{ b.status }}
+        </span>
+      </div>
+
+      <div class="route-line">
+        <span class="city">{{ b.fromCity }}</span>
+        <span class="arrow">&rarr;</span>
+        <span class="city">{{ b.toCity }}</span>
+      </div>
+
+      <dl class="ticket-details">
+        <div class="detail">
+          <dt>Booking ID</dt>
+          <dd>#{{ b.id }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Journey date</dt>
+          <dd>{{ b.journeyDate }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Departure</dt>
+          <dd>{{ b.departureTime.slice(0, 5) }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Arrival</dt>
+          <dd>{{ b.arrivalTime.slice(0, 5) }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Operator</dt>
+          <dd>{{ b.operatorName }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Bus number</dt>
+          <dd>{{ b.busNumber }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Seat(s)</dt>
+          <dd>{{ b.seatNumbers.join(', ') }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Total fare</dt>
+          <dd>&#8377;{{ b.totalFare }}</dd>
+        </div>
+        <div class="detail">
+          <dt>Booked at</dt>
+          <dd>{{ b.bookedAt | date: 'medium' }}</dd>
+        </div>
+        @if (b.cancelledAt) {
+          <div class="detail">
+            <dt>Cancelled at</dt>
+            <dd>{{ b.cancelledAt | date: 'medium' }}</dd>
+          </div>
+        }
+      </dl>
+
+      <p class="ticket-footer">Present this ticket (printed or on screen) along with a valid photo ID at boarding.</p>
+    </div>
+  }
+</section>

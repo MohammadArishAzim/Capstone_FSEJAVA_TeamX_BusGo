@@ -35,6 +35,11 @@ public class ScheduleController {
         return scheduleService.getSeatMap(id);
     }
 
+    @GetMapping("/cities")
+    public List<String> cities() {
+        return scheduleService.findDistinctCities();
+    }
+
     @GetMapping("/all")
     public List<ScheduleResponse> findAll() {
         return scheduleService.findAll();

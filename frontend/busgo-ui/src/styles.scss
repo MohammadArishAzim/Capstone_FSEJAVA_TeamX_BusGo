@@ -168,3 +168,13 @@ table {
   color: var(--color-text-muted);
   padding: 3rem 1rem;
 }
+
+/* Printable ticket (stretch goal, spec section 22): hide app chrome and anything
+   marked .no-print so a printed/PDF'd page shows only the ticket itself. */
+@media print {
+  app-navbar,
+  app-toast,
+  .no-print {
+    display: none !important;
+  }
+}

@@ -31,4 +31,13 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT s FROM Schedule s WHERE s.id = :id")
     Optional<Schedule> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * Distinct city names across both legs of every schedule, for the search form's
+     * autocomplete. Native SQL because JPQL doesn't support UNION; both H2 and Postgres do.
+     */
+    @Query(value = "SELECT DISTINCT city FROM (" +
+           "SELECT from_city AS city FROM schedules UNION SELECT to_city AS city FROM schedules" +
+           ") AS cities ORDER BY city ASC", nativeQuery = true)
+    List<String> findDistinctCities();
 }

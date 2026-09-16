@@ -172,6 +172,7 @@ All JSON. Base path `http://localhost:8080/api`.
 | POST   | `/auth/logout`                | Public       | 204 — stateless, client discards token   |
 | GET    | `/schedules?from=&to=&date=`  | Public       | Search available schedules               |
 | GET    | `/schedules/{id}/seats`       | Public       | Booked seat numbers for a schedule       |
+| GET    | `/schedules/cities`           | Public       | Distinct city names, for search-form autocomplete (stretch goal, not in the original spec's API outline) |
 | GET    | `/schedules/all`              | Admin        | List all schedules (admin management UI) |
 | POST   | `/schedules`                  | Admin        | Create schedule                          |
 | PUT    | `/schedules/{id}`             | Admin        | Update schedule                          |
@@ -272,6 +273,31 @@ admin-only endpoint gets `403 FORBIDDEN` in the standard error JSON shape (via a
 `AccessDeniedHandler`), not a generic Spring error page. The Angular `adminGuard` mirrors this on
 the frontend by hiding the Admin nav link and blocking the `/admin` route for non-admins — that's
 UX, not security; the real enforcement is server-side.
+
+---
+
+## Stretch goals implemented
+
+All three are explicitly optional per spec section 22 ("If Time Permits") — implemented here as
+extra polish, not required for grading:
+
+- **City autocomplete on the search form.** `GET /api/schedules/cities` (public) returns distinct
+  city names via a native SQL query (`SELECT DISTINCT city FROM (SELECT from_city ... UNION SELECT
+  to_city ...)` — plain JPQL doesn't support `UNION`, both H2 and Postgres do). The home page's
+  From/To inputs point at an HTML5 `<datalist>` populated from it; if the call fails, the inputs
+  silently fall back to plain text entry rather than erroring.
+- **Sort results by fare or departure time.** `search-results.ts` holds a `sortBy` signal and a
+  `computed` `sortedResults` derived from it; two buttons above the results list toggle between
+  them. Purely client-side re-sort of the same result set, no extra API call.
+- **Printable ticket / booking summary.** `/my-trips/:id/ticket`, linked from each My Trips row.
+  Reuses the existing `GET /api/bookings/mine` response and filters by id client-side rather than
+  adding a dedicated `GET /api/bookings/{id}` endpoint, since the data's already fetched for that
+  page. A `window.print()` button and `@media print` rules (in `styles.scss`, since they need to
+  hide `<app-navbar>`/`<app-toast>` which are siblings of the ticket component, outside its style
+  encapsulation) produce a clean, chrome-free printout.
+
+All three have e2e coverage in `frontend/busgo-ui/e2e/stretch-goals.spec.ts`, passing against the
+live app alongside the required-flow specs in `happy-path.spec.ts`.
 
 ---
 
