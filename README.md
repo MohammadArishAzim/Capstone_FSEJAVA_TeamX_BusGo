@@ -218,6 +218,17 @@ of each implementing their own error parsing.
 
 ---
 
+## Performance benchmark
+
+The spec's NFR target (section 11) is API response ≤2s under light concurrent load (5–10
+requests). Measured, not just assumed: `./scripts/benchmark.sh` runs Apache Bench against five
+representative endpoints at those concurrency levels. Every request across every run succeeds (0
+failures), and the worst-case p99 latency (login, which is intentionally slow — see below) is
+253ms, still 8x under budget. Full numbers, methodology, and how to reproduce:
+[`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
+---
+
 ## Architecture notes
 
 ### JWT vs. session — trade-off
