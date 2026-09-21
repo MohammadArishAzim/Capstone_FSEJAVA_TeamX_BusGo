@@ -1,10 +1,10 @@
 package com.busgo.security;
 
 import com.busgo.dto.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -19,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
 import java.util.List;
@@ -30,7 +31,7 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final CustomUserDetailsService userDetailsService;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper; // Jackson 3, auto-configured by Boot 4 (java.time + ISO dates built in)
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,8 +40,7 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
@@ -60,8 +60,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("GET", "/api/schedules", "/api/schedules/*/seats").permitAll()
-                .requestMatchers("GET", "/api/buses", "/api/buses/*").permitAll()
+                // HttpMethod.GET (not the string "GET"): requestMatchers(String...) treats every
+                // argument as a URL pattern, which silently made these routes public for ALL methods.
+                .requestMatchers(HttpMethod.GET, "/api/schedules", "/api/schedules/*/seats").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/buses", "/api/buses/*").permitAll()
                 .requestMatchers("/api/buses/**").hasRole("ADMIN")
                 .requestMatchers("/api/schedules/**").hasRole("ADMIN")
                 .anyRequest().authenticated()

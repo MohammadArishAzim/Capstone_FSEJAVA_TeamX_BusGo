@@ -17,19 +17,19 @@ cd backend && mvn spring-boot:run   # start the app first, separate terminal
 `scripts/benchmark.sh` hits five representative endpoints (a public search, a public list, an
 authenticated read, and the login endpoint) at the spec's 5 and 10 concurrency levels.
 
-## Results (measured on this machine: Apple Silicon Mac, JDK 25, H2 in-memory dev profile)
+## Results (measured on this machine: Apple Silicon Mac, JDK 25, Spring Boot 4.1.1, H2 in-memory dev profile)
 
 All numbers in milliseconds unless noted. **Every single request across every run succeeded (0
 failures)**, and every p99 is well under the 2,000ms target — the closest any endpoint gets is
-login at 253ms, still 8x under budget.
+login at 286ms, still about 7x under budget.
 
 | Endpoint | Concurrency | Requests | Mean | p50 | p95 | p99 | Req/sec |
 |---|---|---|---|---|---|---|---|
-| `GET /api/schedules` (search) | 5 | 100 | ~9ms | 6 | 14 | 99* | 423 |
-| `GET /api/schedules` (search) | 10 | 200 | ~8ms | 7 | 13 | 18 | 1209 |
-| `GET /api/buses` | 10 | 200 | ~4ms | 2 | 6 | 19 | 2809 |
-| `POST /api/auth/login` | 5 | 50 | ~90ms | 94 | 103 | 253* | 42 |
-| `GET /api/bookings/mine` (authenticated) | 10 | 100 | ~10ms | 7 | 12 | 29 | 1002 |
+| `GET /api/schedules` (search) | 5 | 100 | ~13ms | 5 | 9 | 157* | 377 |
+| `GET /api/schedules` (search) | 10 | 200 | ~7ms | 6 | 13 | 18 | 1437 |
+| `GET /api/buses` | 10 | 200 | ~4ms | 3 | 6 | 11 | 2720 |
+| `POST /api/auth/login` | 5 | 50 | ~119ms | 90 | 97 | 286* | 42 |
+| `GET /api/bookings/mine` (authenticated) | 10 | 100 | ~8ms | 5 | 8 | 34 | 1202 |
 
 \* A single outlier request (JIT warmup / first-request-after-idle on a freshly started JVM) pulls
 the p99 up on otherwise-fast runs; p50/p95 are the more representative numbers for steady-state
@@ -39,11 +39,11 @@ behavior.
 
 - **Login is the slowest endpoint by design, not by accident.** BCrypt is deliberately
   computationally expensive (that's the entire point of using it over a fast hash like SHA-256,
-  which would make brute-forcing leaked password hashes cheap) — the ~90ms mean reflects the
+  which would make brute-forcing leaked password hashes cheap) — the ~119ms mean (p50 90ms) reflects the
   password-verification cost, not an inefficiency to fix.
 - **These numbers are against H2 in-memory**, which is faster than Postgres would be over a real
   network connection; they're a ceiling on what's achievable locally, not a guarantee for a
-  networked Postgres deployment. Still, the margin to the 2s target (over 20x even for login) leaves
+  networked Postgres deployment. Still, the margin to the 2s target (about 7x even for login's worst-case p99) leaves
   substantial headroom for that difference.
 - **Concurrency correctness, not just latency, was also verified separately**: see the README's
   "Seat conflict checking" section for the seat-booking race-condition fix, which was verified with
