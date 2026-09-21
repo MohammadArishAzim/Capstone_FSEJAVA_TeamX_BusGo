@@ -4,7 +4,7 @@ A full-stack bus ticket booking application built as a Sprint 1 capstone scaffol
 Stack Engineering training program. Users search buses between cities, pick a departure, select
 seats on a 10x4 grid, and confirm a booking. Admins manage the bus fleet and schedules.
 
-Stack: **Angular** (frontend) + **Spring Boot 3 / Java 21** (backend) + **JWT auth** (stateless)
+Stack: **React 19 + TypeScript + Vite + Bootstrap 5** (frontend) + **Spring Boot 3 / Java 21** (backend) + **JWT auth** (stateless)
 + **H2** (dev) / **PostgreSQL** (prod) + **JUnit 5 / Mockito** + **springdoc-openapi (Swagger)**.
 
 ---
@@ -15,9 +15,10 @@ Stack: **Angular** (frontend) + **Spring Boot 3 / Java 21** (backend) + **JWT au
 busgo/
   backend/          Spring Boot API (Maven)
   frontend/
-    busgo-ui/        Angular app
+    busgo-ui/        React app (Vite + TypeScript) -- Dev 6 scope: My Trips + Confirm Booking
   docs/
     BusGo.postman_collection.json
+    DEV6_SCOPE.md   Dev 6 (Booking & My Trips) ownership, contracts, integration notes
   README.md
 ```
 
@@ -107,44 +108,51 @@ cover:
 > annotation processor is reliably invoked regardless of JDK/IDE defaults — without it, the plain
 > `spring-boot-maven-plugin` exclude alone isn't sufficient on every toolchain, and all Lombok
 > codegen (builders, getters/setters, `@Slf4j`) silently no-ops, which fails the build with "cannot
-> find symbol" everywhere it's used. The Angular frontend was built and tested successfully in this
-> session too — see the Frontend section for what was verified there.
+> find symbol" everywhere it's used. The React frontend's build, lint, unit tests and
+> e2e are covered in the Frontend section below.
 
 ---
 
 ## Running the frontend
 
-Requirements: Node 22, Angular CLI (`npm install -g @angular/cli`).
+Requirements: Node 20.19+ (or 22+). The backend must be running first (`http://localhost:8080`).
 
 ```bash
 cd frontend/busgo-ui
 npm install
-npm start
+npm run dev        # http://localhost:5173
 ```
 
-Opens on **http://localhost:4200** and proxies API calls to `http://localhost:8080/api`
-(configured in `src/environments/environment.ts`) — make sure the backend is running first.
+The API base URL defaults to `http://localhost:8080/api`; override with `VITE_API_URL`. The
+backend's CORS config already allows any `http://localhost:*` origin.
 
-### Frontend build & tests (verified in this session)
+This branch's frontend covers **Dev 6's scope only** (see [`docs/DEV6_SCOPE.md`](docs/DEV6_SCOPE.md)):
+the **My Trips** page (active/cancelled bookings, filter tabs, cancel with confirmation) and the
+**Confirm Booking** dialog. Login and the app shell are minimal placeholders marked
+`TEMPORARY SHIM` in the source, to be replaced by Dev 1's real auth/Navbar. Search, seat selection
+and the admin screens belong to Dev 2-5.
+
+### Frontend checks
 
 ```bash
-npm run build   # ng build — verified clean, no errors or warnings
-npm test        # ng test — verified: 6/6 specs passing (headless Chrome)
+npm run build      # tsc --noEmit + vite build
+npm run lint       # ESLint (typescript-eslint + react-hooks)
+npm test           # Vitest + Testing Library: 22 tests (API client, Confirm Booking dialog, My Trips)
+npm run e2e        # Playwright against the live backend: 7 specs (first time: npx playwright install chromium)
 ```
 
-Testing uses **Karma + Jasmine** rather than Angular 21's newer default (Vitest) — the
-Vitest-based scaffold hit an npm dependency-resolution crash (`Cannot read properties of null
-(reading 'edgesOut')`, a known npm/arborist issue with Vitest 4.x's peer-dependency graph) in this
-sandboxed environment, so the project was reconfigured to the traditional Karma/Jasmine builder,
-which installed and ran cleanly. Functionally equivalent for this project's needs.
-
-Specs written:
-- `src/app/app.spec.ts` — root component renders.
-- `src/app/features/seat-selection/seat-selection.spec.ts` — the booking-critical logic: booked
-  seats can't be selected, seat toggling works both ways, the 4-seat cap is enforced, and the
-  fare total is computed correctly from selected seats. This is the "at least one meaningful spec"
-  called for in the assignment, focused on the seat-selection/booking-form component rather than
-  padding for a number.
+What the tests cover:
+- `src/api/client.test.ts` -- Bearer token attached, the backend's `{message}` error shape surfaced,
+  unreachable server / non-JSON errors / 204 handled.
+- `src/features/booking/ConfirmBookingDialog.test.tsx` -- fare summary (seats x fare = total), the
+  booking call and `onBooked`, **409 seat conflict** (reason shown, `onConflict` fired, dialog stays
+  open), in-flight disabling, Escape / Go back.
+- `src/features/my-trips/MyTripsPage.test.tsx` -- loading / empty / error+retry states, All / Active /
+  Cancelled filters, cancel only offered for active *upcoming* trips (today counts), cancel flow
+  and its failure paths (409 reload, 401 logout).
+- `e2e/my-trips.spec.ts` -- against the real backend: anonymous redirect, empty state, list +
+  cancel through the dialog (and the seats really freed server-side), keep-booking, form login, and
+  booking through the dialog including a seat stolen mid-dialog.
 
 ---
 
@@ -204,8 +212,9 @@ shape via a global `@RestControllerAdvice`:
 }
 ```
 
-The Angular `authInterceptor` reads `message` from this shape and surfaces it as a toast, so
-components don't each implement their own error parsing.
+The frontend's `apiFetch` client (`src/api/client.ts`) reads `message` from this shape and throws
+it as an `ApiRequestError` (with the HTTP status), so components show the server's reason instead
+of each implementing their own error parsing.
 
 ---
 
@@ -218,17 +227,17 @@ server-side sessions, per the assignment's chosen architecture. The trade-offs, 
 relevant to this project:
 
 - **Pros**: no server-side session store to scale/replicate (fits a REST API cleanly), the
-  Angular SPA can attach the token to every request via a single HTTP interceptor, and the backend
+  SPA can attach the token to every request from a single API client, and the backend
   stays fully stateless — any instance can validate any request with only the shared secret.
 - **Cons**: **logout is a lie in the purest sense** — a JWT can't be server-side invalidated
   without adding a token blocklist (which reintroduces state). This app's `/auth/logout` endpoint
   is therefore just a 204 for API-shape completeness; the actual logout is the **client discarding
-  the token** (`AuthService.logout()` clears it from the signal and `localStorage`). If a token
+  the token** (the auth context's `logout()` clears it from state and `localStorage`). If a token
   leaks, it's valid until it expires (24h by default, `busgo.jwt.expiration-ms`), regardless of
   whether the user "logged out." A real production system needing hard revocation would need a
   short-lived access token + refresh token pattern, or a server-side denylist — both out of scope
   for this project's size.
-- **Storage**: the frontend keeps the token in an Angular `signal` (source of truth for the running
+- **Storage**: the frontend keeps the token in React auth state (source of truth for the running
   app) and mirrors it to `localStorage` purely so a page refresh doesn't log the user out. This is
   the well-known XSS-exposure trade-off of `localStorage` vs. an httpOnly cookie; acceptable here
   because there's no XSS-prone third-party content in this app, but worth naming as a known
@@ -269,9 +278,8 @@ bus/schedule write endpoints (`hasRole("ADMIN")` on `/api/buses/**` and `/api/sc
 with narrower `permitAll()` carve-outs for the public GET search/seat-map/list endpoints declared
 *before* those broader rules, since Spring Security matches in order). A non-admin JWT hitting an
 admin-only endpoint gets `403 FORBIDDEN` in the standard error JSON shape (via a custom
-`AccessDeniedHandler`), not a generic Spring error page. The Angular `adminGuard` mirrors this on
-the frontend by hiding the Admin nav link and blocking the `/admin` route for non-admins — that's
-UX, not security; the real enforcement is server-side.
+`AccessDeniedHandler`), not a generic Spring error page. The frontend's admin route guard (Dev 2's scope) mirrors this
+by hiding the Admin nav link and blocking `/admin` for non-admins — that's UX, not security; the real enforcement is server-side.
 
 ---
 
@@ -286,11 +294,9 @@ transparency rather than treated as accidental gaps:
 - **No refresh tokens / server-side JWT revocation.** See the JWT-vs-session note above.
 - **No Flyway/Liquibase migrations.** Schema is managed via `ddl-auto: update`, appropriate for
   this project's size; a real production app would want versioned migrations.
-- **No e2e tests.** Not required by the spec; backend service-layer coverage (JUnit5/Mockito) and
-  one meaningful Angular component spec are the testing deliverables here.
-- **Karma/Jasmine instead of Angular 21's new Vitest default**, for the environment-specific
-  reason described in the Frontend section above (an npm bug with Vitest's peer-dep graph in this
-  sandbox) — not a preference against Vitest generally.
+- **E2e tests are optional extras.** The spec waives them; the required testing deliverables are
+  backend service-layer coverage (JUnit5/Mockito) and a few frontend unit tests. The Playwright
+  specs and the real-database `BookingConcurrencyTest` go beyond that.
 - **`mvn test` and `mvn spring-boot:run` have now been executed and verified** (see the backend
   section above) — the earlier gap noted here is closed.
 - **Console logging only** (via Lombok `@Slf4j` / Spring Boot defaults), no external logging
@@ -308,22 +314,23 @@ This project was built with **Claude (Anthropic)** as a pair-programmer, per the
 that rewards documented AI usage. Concretely, in this session:
 
 - Claude scaffolded the entire backend (entities, repositories, DTOs, services, controllers,
-  Spring Security + JWT configuration, the global exception handler, the seed data runner) and the
-  entire frontend (Angular routing, services, guards, interceptor, all feature components) from
-  the assignment's written spec, in one continuous build session.
-- Claude wrote the service-layer unit tests (JUnit5/Mockito) and the Angular seat-selection specs,
-  designed around the spec's explicitly called-out risk areas (seat-conflict logic, admin
-  authorization, search filtering) rather than generated for coverage-percentage padding.
-- Claude hit and worked around two real environment issues during the build: (1) an npm
-  dependency-resolution crash with Angular 21's default Vitest test setup, resolved by
-  reconfiguring the project to Karma/Jasmine; (2) a sandboxed network policy that blocked all
-  Maven repository hosts, which could **not** be worked around — this is disclosed above as a real
-  limitation of this build session, not glossed over.
+  Spring Security + JWT configuration, the global exception handler, the seed data runner) and an
+  initial Angular frontend from the assignment's written spec, in one continuous build session.
+- Claude wrote the service-layer unit tests (JUnit5/Mockito), designed around the spec's
+  explicitly called-out risk areas (seat-conflict logic, admin authorization, search filtering)
+  rather than generated for coverage-percentage padding.
+- For the team split (Dev 6: Booking & My Trips), the team chose React and the `com.busgo`
+  package, so Claude rewrote the frontend as React + TypeScript for Dev 6's scope only (My Trips
+  page, Confirm Booking dialog, API client, Vitest/Playwright tests) and added the real-database
+  `BookingConcurrencyTest`. Claude also ran a security review that found two real issues (a
+  check-then-insert seat double-booking race, and silent hardcoded prod secrets), both fixed and
+  verified: the race by firing concurrent requests at one seat, and the concurrency test was
+  checked by temporarily removing the lock and confirming it fails.
 - Every architectural choice mentioned in this README (JWT trade-off, DTO-not-entity boundary,
   derived-seats-from-BookingSeat instead of a Seat table, transactional seat-conflict check) was
   made by Claude following the assignment's explicit spec, not invented independently — the spec
   document was the primary source of truth throughout.
 - A human (the developer using this training program) directed the overall requirements, chose
-  the tech stack (Angular + Spring Boot + JWT), and is responsible for reviewing, running, and
+  the tech stack (Spring Boot + JWT; React after the team's decision), and is responsible for reviewing, running, and
   ultimately owning this code before submission — this README's "known gaps" section exists so
   that review can start from an honest list rather than discovering issues cold.
