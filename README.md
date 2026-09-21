@@ -4,7 +4,7 @@ A full-stack bus ticket booking application built as a Sprint 1 capstone scaffol
 Stack Engineering training program. Users search buses between cities, pick a departure, select
 seats on a 10x4 grid, and confirm a booking. Admins manage the bus fleet and schedules.
 
-Stack: **React 19 + TypeScript + Vite + Bootstrap 5** (frontend) + **Spring Boot 3 / Java 21** (backend) + **JWT auth** (stateless)
+Stack: **React 19 + TypeScript + Vite + Bootstrap 5** (frontend) + **Spring Boot 4.1.1 / Java 21** (backend) + **JWT auth** (stateless)
 + **H2** (dev) / **PostgreSQL** (prod) + **JUnit 5 / Mockito** + **springdoc-openapi (Swagger)**.
 
 ---
@@ -95,6 +95,8 @@ cover:
 - **AuthServiceTest** — duplicate-email rejection on register, password hashing delegated to
   `PasswordEncoder`, bad-credentials propagation on login.
 - **BusServiceTest** — duplicate bus-number rejection, not-found, delete.
+- **BookingConcurrencyTest** — real-database race tests (8 threads, one seat: exactly one wins).
+- **AuthorizationRulesTest** — every admin route through the real security filter chain.
 
 ### Coverage
 
@@ -109,25 +111,21 @@ JaCoCo coverage check scoped to `com.busgo.service.*` (the package the spec's te
 this project's test suite actually target — controllers are thin pass-throughs to services, DTOs
 are plain records, and security/config classes are framework wiring, none of which the spec asks
 to be unit-tested) and **fails the build** if method coverage there drops below 60%. Measured
-result at time of writing: **67.9% method coverage (36/53), 82.9% line coverage** in
-`com.busgo.service`. Whole-project method coverage (including the intentionally-untested
-controller/DTO/security/config classes) is 34.8% — expected, and not the number the spec's
-target applies to.
+result at time of writing: **75.5% method coverage (40/53), 95.6% line coverage** in
+`com.busgo.service`. Whole-project method coverage is 69.9% (the security filter chain and
+controllers are now exercised by `AuthorizationRulesTest` and the full-context concurrency tests).
 
-> **Verified**: `mvn clean test` (27/27 passing), `mvn clean package`, and a live run
-> (`java -jar target/backend-0.1.0.jar`) were all executed successfully, including exercising the
-> `/api/auth/login` and `/api/schedules` endpoints against the seeded H2 data with real HTTP
-> requests. Two dependency-version pins were required to build cleanly on a JDK 25 toolchain (the
-> project still targets `java.version=21` and builds fine on 21 too): `lombok.version=1.18.48`
-> (older Lombok can't patch JDK 25's compiler internals) and `mockito.version=5.23.0` plus an
-> explicit `byte-buddy.version=1.18.14` override (Hibernate's transitively-pulled Byte Buddy 1.14.19
-> otherwise wins Maven's nearest-wins mediation and can't instrument classes on JDK 25). An explicit
-> `maven-compiler-plugin` block with `annotationProcessorPaths` was also added so Lombok's
-> annotation processor is reliably invoked regardless of JDK/IDE defaults — without it, the plain
-> `spring-boot-maven-plugin` exclude alone isn't sufficient on every toolchain, and all Lombok
-> codegen (builders, getters/setters, `@Slf4j`) silently no-ops, which fails the build with "cannot
-> find symbol" everywhere it's used. The React frontend's build, lint, unit tests and
-> e2e are covered in the Frontend section below.
+> **Verified**: `mvn clean verify` (54 tests, JaCoCo gate), `mvn clean package`, and a live run
+> (`java -jar target/backend-0.1.0.jar`) all pass on Spring Boot 4.1.1, including real HTTP
+> requests against the seeded H2 data and the Playwright suite against the running backend. Boot 4's
+> managed Lombok / Mockito / Byte Buddy versions work on JDK 25 with no manual overrides (the earlier
+> Boot 3.3 build needed them pinned). An explicit `maven-compiler-plugin` block with
+> `annotationProcessorPaths` is kept so Lombok's annotation processor is always invoked regardless of
+> JDK/IDE defaults; without it Lombok codegen (builders, getters, `@Slf4j`) can silently no-op.
+> Boot 4 specifics handled: starter renamed to `spring-boot-starter-webmvc`, the H2 console moved to
+> `spring-boot-h2console`, Jackson 3 (`tools.jackson`) replaces the hand-rolled `ObjectMapper` bean
+> (java.time and ISO dates are built in), and `DaoAuthenticationProvider` takes its
+> `UserDetailsService` in the constructor (Spring Security 7).
 
 ---
 
@@ -242,7 +240,7 @@ The spec's NFR target (section 11) is API response ≤2s under light concurrent 
 requests). Measured, not just assumed: `./scripts/benchmark.sh` runs Apache Bench against five
 representative endpoints at those concurrency levels. Every request across every run succeeds (0
 failures), and the worst-case p99 latency (login, which is intentionally slow — see below) is
-253ms, still 8x under budget. Full numbers, methodology, and how to reproduce:
+286ms, still about 7x under budget. Full numbers, methodology, and how to reproduce:
 [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 ---

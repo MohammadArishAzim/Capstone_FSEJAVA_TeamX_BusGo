@@ -118,13 +118,13 @@ The search-result objects from `GET /api/schedules` already satisfy `schedule`.
 3. **Java package.** Dev 6 uses `com.busgo`; Dev 2's backend repo uses
    `Capstone_FSEJAVA_Team53_BusGo.bus_management_api`. Entities must share one package to
    compile together (Booking → `User`, `Schedule`, `Bus`).
-4. **Spring Boot version.** Dev 6 builds on Spring Boot 3.3.4; Dev 2's `pom.xml` uses Spring Boot
-   4.1.1 (and the Boot 4 starter names). Modules must converge on one version to merge.
+4. **Spring Boot version — resolved.** The project is now on Spring Boot 4.1.1 (the latest GA), the
+   same version as Dev 2's `pom.xml`, so only the package name differs between our backends.
 
 ## Running it
 
 ```bash
-cd backend && mvn test                     # 30 tests (incl. BookingConcurrencyTest)
+cd backend && mvn test                     # 54 tests (incl. BookingConcurrencyTest)
 cd backend && mvn spring-boot:run          # :8080, seeded H2
 cd frontend/busgo-ui && npm install && npm run dev   # :5173
 cd frontend/busgo-ui && npm test && npm run lint && npm run build && npm run e2e
