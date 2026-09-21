@@ -310,6 +310,12 @@ admin-only endpoint gets `403 FORBIDDEN` in the standard error JSON shape (via a
 `AccessDeniedHandler`), not a generic Spring error page. The frontend's admin route guard (Dev 2's scope) mirrors this
 by hiding the Admin nav link and blocking `/admin` for non-admins — that's UX, not security; the real enforcement is server-side.
 
+These rules are locked in by `AuthorizationRulesTest`, which drives every admin write route through the real
+security filter chain as an anonymous caller (expects 401), a passenger (403) and the admin (allowed), and
+checks the public reads stay public. It exists because an earlier version passed the string `"GET"` to
+`requestMatchers(...)`, which Spring Security treats as a URL pattern, so `POST /api/buses` was open to
+anyone. The matchers now use `HttpMethod.GET`.
+
 ---
 
 ## What was simplified / deliberately left as a known gap

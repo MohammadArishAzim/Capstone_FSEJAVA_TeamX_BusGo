@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -60,8 +61,10 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("GET", "/api/schedules", "/api/schedules/*/seats").permitAll()
-                .requestMatchers("GET", "/api/buses", "/api/buses/*").permitAll()
+                // HttpMethod.GET (not the string "GET"): requestMatchers(String...) treats every
+                // argument as a URL pattern, which silently made these routes public for ALL methods.
+                .requestMatchers(HttpMethod.GET, "/api/schedules", "/api/schedules/*/seats").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/buses", "/api/buses/*").permitAll()
                 .requestMatchers("/api/buses/**").hasRole("ADMIN")
                 .requestMatchers("/api/schedules/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
